@@ -1,0 +1,53 @@
+//voyage
+{
+    "_id": "V0001",
+    "date": "2025-01-01",
+    "heure_debut": "08:30",
+    "duree": 40,
+    "sens": "Aller",
+    "nb_voyageurs": 110,
+    "observation": "RAS",
+  
+    "navette": {
+      "_id": "N001",
+      "marque": "Alstom",
+      "annee": 2021,
+      "moyen_transport": {
+        "code": "MET",
+        "type": "Métro",
+        "heure_ouverture": "06:00",
+        "heure_fermeture": "23:00",
+        "nb_moyen_voyageurs": 90000
+      },
+      "ligne_id": "M001"
+    }
+  }
+
+// Station
+{
+    "_id": "S001",
+    "nom": "Cité U",
+    "principale": true,
+    "longitude": 3.1751,
+    "latitude": 36.7128,
+  
+    "troncons":
+      {
+        "num_troncon": "T001",
+        "station_fin_id": "S002",
+        "longueur": 2.5
+      },
+  
+    "lignes": [
+      { "_id": "M001" },
+      { "_id": "B003" }
+    ]
+}
+
+// Ligne
+{
+    "_id": "M001",
+    "station_depart_id": "S001",
+    "station_arrivee_id": "S005",
+    "troncons_ids": ["T001", "T002", "T003"]
+}
