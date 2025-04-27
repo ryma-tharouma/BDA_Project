@@ -39,13 +39,13 @@ CREATE OR REPLACE TYPE tMoyenTransport AS OBJECT (
 
 Create or replace type tStation as object(
     codeStation integer,
-    nom varchar2(50),
+    nom_station varchar2(50),
     longitude number,
     latitude number,
     principale boolean, -- true or false
     Station_Ligne_Depart t_set_ref_lignes,
     Station_Ligne_Arrivee t_set_ref_lignes,
-    station_troncon t_set_ref_troncon
+    station_troncon ref tTroncon,
 );
 /
 
@@ -119,10 +119,9 @@ CREATE OR REPLACE TYPE BODY tLigne AS
             lignes_navettes SYS_REFCURSOR;
     BEGIN
         OPEN lignes_navettes FOR
-            SELECT l.codeLigne, n.numNavette
-            FROM Ligne l
-            LEFT JOIN TABLE(l.ligne_navette) ln ON REF(ln) = REF(n)
-            LEFT JOIN Navette n ON REF(n) = VALUE(ln);
+            SELECT SELF.codeLigne AS codeLigne, 
+                DEREF(ln).numNavette AS numNavette
+            FROM TABLE(SELF.ligne_navette) ln;
         RETURN lignes_navettes;
     END getNavettesParLigne;
 
@@ -142,105 +141,42 @@ CREATE OR REPLACE TYPE BODY tLigne AS
 END;
 /
 
--- Station method to change station name
-ALTER TYPE tStation ADD MEMBER PROCEDURE changerNomStation(p_nouveau_nom VARCHAR2);
+-- Changer le nom de la station « BEZ » par « Univ » dans toutes les lignes/tronçons comportant cette station.
+ALTER TYPE tStation ADD MEMBER PROCEDURE changerNomStation();
 /
 CREATE OR REPLACE TYPE BODY tStation AS 
     MEMBER PROCEDURE changerNomStation(p_nouveau_nom VARCHAR2) IS
     BEGIN
         -- Update the station name
-        self.nom := p_nouveau_nom;
-        
-        -- Note: To update references in other objects would require
-        -- database-level UPDATE statements which can't be done directly in this procedure
+        UPDATE StationTable s
+        SET value(s).nom_station = 'Univ'
+        WHERE value(s).nom_station = 'BEZ';
+        DBMS_OUTPUT.PUT_LINE('Station name changed to: ' || p_nouveau_nom);
     END changerNomStation;
 END;
 /
 
--- MoyenTransport method to get voyages on a specific date
-ALTER TYPE tMoyenTransport ADD MEMBER FUNCTION getNombreVoyages(p_date DATE) RETURN NUMBER;
+-- Calculer pour un moyen de transport donné (Exemple Métro), le nombre de voyages effectués  
+-- à une date donnée (Exemple le 28-02-2025) et le nombre de voyageurs total. 
+ALTER TYPE tMoyenTransport ADD MEMBER FUNCTION getNbrVoyagesVoyageurs(p_date DATE) RETURN NUMBER;
 /
 CREATE OR REPLACE TYPE BODY tMoyenTransport AS 
-    MEMBER FUNCTION getNombreVoyages(p_date DATE) RETURN NUMBER IS
+    MEMBER FUNCTION getNbrVoyagesVoyageurs(p_date DATE) RETURN NUMBER IS
         total NUMBER := 0;
         totalVoyageurs NUMBER := 0;
     BEGIN
-        -- Count voyages for this mode of transport on the given date
-        SELECT COUNT(*), SUM(v.nbVoyageurs)
+        -- Dérouler les navettes de ce moyen de transport et accéder à leurs voyages
+        SELECT COUNT(*), SUM(DEREF(v).nbVoyageurs)
         INTO total, totalVoyageurs
-        FROM Voyage v, Navette n
-        WHERE v.date_voyage = p_date
-        AND v.voyage_navette = REF(n)
-        AND n.codeMT = REF(SELF);
+        FROM TABLE(SELF.MoyenTransport_Navette) n,
+             TABLE(DEREF(n).navette_voyage) v
+        WHERE DEREF(v).date_voyage = p_date
+          AND DEREF(n).codeMT = REF(SELF);
         
         DBMS_OUTPUT.PUT_LINE('Total voyages: ' || total || ', Total voyageurs: ' || totalVoyageurs);
+        
         RETURN total;
-    END getNombreVoyages;
+    END getNbrVoyagesVoyageurs;
 END;
 /
 
--- 5. Tables
-CREATE TABLE MoyenTransport OF tMoyenTransport (
-    PRIMARY KEY (codeMT)
-)
-NESTED TABLE MoyenTransport_Ligne STORE AS MoyenTransport_Ligne_NT
-NESTED TABLE MoyenTransport_Navette STORE AS MoyenTransport_Navette_NT;
-/
-
-CREATE TABLE Station OF tStation (
-    PRIMARY KEY (codeStation)
-)
-NESTED TABLE Station_Ligne_Depart STORE AS Station_Ligne_Depart_NT
-NESTED TABLE Station_Ligne_Arrivee STORE AS Station_Ligne_Arrivee_NT
-NESTED TABLE station_troncon STORE AS station_troncon_NT;
-/
-
-CREATE TABLE Ligne OF tLigne (
-    PRIMARY KEY (codeLigne)
-)
-NESTED TABLE ligne_navette STORE AS ligne_navette_NT
-NESTED TABLE ligne_troncon STORE AS ligne_troncon_NT;
-/
-
-CREATE TABLE Troncon OF tTroncon (
-    PRIMARY KEY (numTroncon),
-    CONSTRAINT fk_troncon_ligne1 FOREIGN KEY (Ligne1) REFERENCES Ligne,
-    CONSTRAINT fk_troncon_ligne2 FOREIGN KEY (Ligne2) REFERENCES Ligne,
-    CONSTRAINT fk_troncon_station1 FOREIGN KEY (station1) REFERENCES Station,
-    CONSTRAINT fk_troncon_station2 FOREIGN KEY (station2) REFERENCES Station
-);
-/
-
-CREATE TABLE Navette OF tNavette (
-    PRIMARY KEY (numNavette),
-    CONSTRAINT fk_navette_moyen_transport FOREIGN KEY (codeMT) REFERENCES MoyenTransport
-)
-NESTED TABLE navette_voyage STORE AS navette_voyage_NT
-NESTED TABLE navette_ligne STORE AS navette_ligne_NT;
-/
-
-CREATE TABLE Voyage OF tVoyage (
-    PRIMARY KEY (numVoyage),
-    CONSTRAINT fk_voyage_navette FOREIGN KEY (voyage_navette) REFERENCES Navette
-);
-/
-
--- Check constraints 
--- ouverture < fermeture
-ALTER TABLE MoyenTransport ADD CONSTRAINT chk_ouverture_fermeture CHECK (heure_ouverture < heure_fermeture);
--- principale boolean, -- true or false
-ALTER TABLE Station ADD CONSTRAINT chk_principale CHECK (principale IN (0, 1));
--- sens char(1), -- 'A' ou 'R' 
-ALTER TABLE Voyage ADD CONSTRAINT chk_sens CHECK (sens IN ('A', 'R'));
--- Ligne1 != Ligne2
-ALTER TABLE Troncon ADD CONSTRAINT chk_ligne1_ligne2 CHECK (Ligne1 != Ligne2);
--- station1 != station2
-ALTER TABLE Troncon ADD CONSTRAINT chk_station1_station2 CHECK (station1 != station2);
-
-
-
-
-
--- 6. Insert sample data
-
--- 7. Les requetes
