@@ -1,9 +1,47 @@
+// Constants for data generation
 const observations = ["RAS", "Retard", "Panne", "Accident"];
 const moyens_transport = [
   { code: "MET", type: "Métro", heure_ouverture: "06:00", heure_fermeture: "23:00", nb_moyen_voyageurs: 90000 },
   { code: "BUS", type: "Bus", heure_ouverture: "05:30", heure_fermeture: "22:00", nb_moyen_voyageurs: 40000 },
   { code: "TRA", type: "Tramway", heure_ouverture: "07:00", heure_fermeture: "21:00", nb_moyen_voyageurs: 30000 },
   { code: "TRN", type: "Train", heure_ouverture: "05:00", heure_fermeture: "23:00", nb_moyen_voyageurs: 60000 }
+];
+
+// Stations data
+const stations = [
+  { _id: "S001", nom: "Cité U", principale: true, longitude: 3.1751, latitude: 36.7128 },
+  { _id: "S002", nom: "Centre Ville", principale: true, longitude: 3.1800, latitude: 36.7200 },
+  { _id: "S003", nom: "Gare Centrale", principale: true, longitude: 3.1850, latitude: 36.7150 },
+  { _id: "S004", nom: "Université", principale: false, longitude: 3.1900, latitude: 36.7100 },
+  { _id: "S005", nom: "Aéroport", principale: true, longitude: 3.2000, latitude: 36.7000 }
+];
+
+// Lines data
+const lignes = [
+  { 
+    _id: "M001", 
+    station_depart_id: "S001", 
+    station_arrivee_id: "S005",
+    troncons_ids: ["T001", "T002", "T003"]
+  },
+  { 
+    _id: "B001", 
+    station_depart_id: "S002", 
+    station_arrivee_id: "S003",
+    troncons_ids: ["T004", "T005"]
+  },
+  { 
+    _id: "T001", 
+    station_depart_id: "S003", 
+    station_arrivee_id: "S004",
+    troncons_ids: ["T006", "T007"]
+  },
+  { 
+    _id: "R001", 
+    station_depart_id: "S001", 
+    station_arrivee_id: "S003",
+    troncons_ids: ["T008", "T009"]
+  }
 ];
 
 const navettes = [
@@ -15,6 +53,33 @@ const navettes = [
 
 let voyages = [];
 let idCounter = 1;
+
+// Ajouter 3 voyages spécifiques avec observation "RAS"
+const datesRAS = [
+  new Date("2025-01-01"),
+  new Date("2025-01-02"),
+  new Date("2025-01-03")
+];
+
+for (let i = 0; i < 3; i++) {
+  voyages.push({
+    _id: "V" + idCounter.toString().padStart(4, "0"),
+    date: datesRAS[i],
+    heure_debut: "08:00",
+    duree: 45,
+    sens: "Aller",
+    nb_voyageurs: 100,
+    observation: "RAS",
+    navette: {
+      _id: navettes[0]._id,
+      marque: navettes[0].marque,
+      annee: navettes[0].annee,
+      moyen_transport: navettes[0].moyen_transport,
+      ligne_id: navettes[0].ligne_id
+    }
+  });
+  idCounter++;
+}
 
 const startDate = new Date("2025-01-01");
 const endDate = new Date("2025-03-01");
@@ -44,5 +109,7 @@ for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
   }
 }
 
-// Maintenant insère tous ces voyages dans MongoDB
+// Insert all data
+db.stations.insertMany(stations);
+db.lignes.insertMany(lignes);
 db.voyages.insertMany(voyages);

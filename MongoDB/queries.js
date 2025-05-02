@@ -1,5 +1,6 @@
+// ====================================================
 // Afficher tous les voyages effectués en date du 01-01-2025 (préciser les détails de chaque voyage)
-
+// ====================================================
 db.voyages.find({ date: new Date("2025-01-01") }).forEach(voyage => {
   print(`Voyage ID: ${voyage._id}`);
   print(`Date: ${voyage.date}`);
@@ -16,9 +17,10 @@ db.voyages.find({ date: new Date("2025-01-01") }).forEach(voyage => {
   print("-------------------------------");
 });
 
-// Dans  une  collection  BON-Voyage,  récupérer  tous  les  voyages  (numéro,  numLigne,  date, heure, sens) 
-// n’ayant enregistré aucun problème, préciser le moyen de transport, le numéro de la navette associés au voyage.
-
+// ====================================================
+// Dans une collection BON-Voyage, récupérer tous les voyages (numéro, numLigne, date, heure, sens) 
+// n'ayant enregistré aucun problème, préciser le moyen de transport, le numéro de la navette associés au voyage
+// ====================================================
 db.voyages.aggregate([
     {
       $match: { observation: "RAS" }   // Garder uniquement les voyages sans problème
@@ -39,23 +41,10 @@ db.voyages.aggregate([
     }
 ]);
 
-
-// Augmenter de 100, le nombre de voyageurs sur tous les voyages effectués par métro avant 
-// la date du 15 janvier 2025.
-db.voyages.updateMany(
-    {
-      "navette.moyen_transport.code": "MET",
-      date: { $lt: "2025-01-15" }
-    },
-    {
-      $inc: { nb_voyageurs: 100 }
-    }
-  );
-  
-// Récupérer dans une nouvelle collection Ligne-Voyages, les numéros de lignes et le nombre 
-// total de  voyages effectués  (par  ligne). La  collection  devra  être ordonnée par  ordre 
-// décroissant du nombre de voyages. Afficher le contenu de la collection.
-
+// ====================================================
+// Récupérer dans une nouvelle collection Ligne-Voyages, les numéros de lignes et le nombre total de voyages 
+// effectués (par ligne). La collection devra être ordonnée par ordre décroissant du nombre de voyages
+// ====================================================
 db.voyages.aggregate([
     {
       $group: {
@@ -69,16 +58,30 @@ db.voyages.aggregate([
     {
       $out: "Ligne-Voyages"          // stocker le résultat dans la collection Ligne-Voyages
     }
-  ]);
+]);
 
-  
-// Reprendre la 3ème requête à l’aide du paradigme Map-Reduce
+// ====================================================
+// Augmenter de 100, le nombre de voyageurs sur tous les voyages effectués par métro avant 
+// la date du 15 janvier 2025
+// ====================================================
+db.voyages.updateMany(
+    {
+      "navette.moyen_transport.code": "MET",
+      date: { $lt: "2025-01-15" }
+    },
+    {
+      $inc: { nb_voyageurs: 100 }
+    }
+);
 
+// ====================================================
+// Reprendre la 3ème requête à l'aide du paradigme Map-Reduce
+// ====================================================
 var mapFunction = function() {
     emit(this.navette.ligne_id, 1);
-  };
+};
 var reduceFunction = function(key, values) {
-return Array.sum(values);
+    return Array.sum(values);
 };
 db.voyages.mapReduce(
     mapFunction,
@@ -88,3 +91,66 @@ db.voyages.mapReduce(
     }
 );
 db["Ligne-Voyages-MapReduce"].find().sort({ value: -1 });
+
+// ====================================================
+// a- Afficher les navettes ayant effectué un nombre maximum de voyages, en précisant le 
+// moyen de transport associé
+// ====================================================
+db.voyages.aggregate([
+    {
+        $group: {
+            _id: {
+                navette_id: "$navette._id",
+                navette_marque: "$navette.marque",
+                moyen_transport: "$navette.moyen_transport.type"
+            },
+            nombre_voyages: { $sum: 1 }
+        }
+    },
+    {
+        $sort: { nombre_voyages: -1 }
+    },
+    {
+        $limit: 1
+    }
+]).forEach(doc => {
+    print(`Navette ID: ${doc._id.navette_id}`);
+    print(`Marque: ${doc._id.navette_marque}`);
+    print(`Moyen de transport: ${doc._id.moyen_transport}`);
+    print(`Nombre de voyages: ${doc.nombre_voyages}`);
+    print("-------------------------------");
+});
+
+// ====================================================
+// b- Afficher les moyens de transport dont le nombre de voyageurs dépasse toujours un seuil 
+// S donné (par exemple 10000) par jour
+// ====================================================
+const SEUIL = 10000;
+
+db.voyages.aggregate([
+    {
+        $group: {
+            _id: {
+                date: "$date",
+                moyen_transport: "$navette.moyen_transport.type"
+            },
+            total_voyageurs: { $sum: "$nb_voyageurs" }
+        }
+    },
+    {
+        $group: {
+            _id: "$_id.moyen_transport",
+            total_voyageurs_per_day: { $push: "$total_voyageurs" }
+        }
+    },
+    {
+        $match: {
+            total_voyageurs_per_day: { $not: { $elemMatch: { $lte: SEUIL } } }
+        }
+    }
+]).forEach(doc => {
+    print(`Moyen de transport: ${doc._id}`);
+    print(`Nombre de voyageurs tous les jours au-dessus de ${SEUIL}`);
+    print("-------------------------------");
+});
+
