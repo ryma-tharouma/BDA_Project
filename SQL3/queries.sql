@@ -21,7 +21,8 @@ FROM Ligne l
 WHERE DEREF(l.stationDepart).principale = 'TRUE'
     OR DEREF(l.stationArrivee).principale = 'TRUE';
 
--- 12. Lister les navettes avec le plus de voyages en janvier 2025
+-- 12.  Quelles sont les navettes (numéro, type de transport, année de mise en service) ayant effectué le 
+-- maximum de voyages durant le mois de janvier 2025 ? Préciser le nombre de voyages. 
 
 SELECT 
     DEREF(v.voyage_navette).numNavette AS num_navette,
@@ -49,16 +50,20 @@ HAVING
         )
     );
 
+-- 13. Quelles sont les stations offrant au moins 2 moyens de transport ? (préciser la station et les moyens 
+-- de transport offerts) 
+
 SELECT 
     s.codeStation,
     s.nom_station,
     LISTAGG(DEREF(l.Ligne_MoyenTransport).typeMt, ', ') 
-        WITHIN GROUP (ORDER BY DEREF(l.Ligne_MoyenTransport).typeMt) as moyens_transport
+        WITHIN GROUP (ORDER BY DEREF(l.Ligne_MoyenTransport).typeMt) AS moyens_transport
 FROM 
     Station s,
     Ligne l
 WHERE 
-    (DEREF(l.stationDepart) = s OR DEREF(l.stationArrivee) = s)
+    s.codeStation = DEREF(l.stationDepart).codeStation
+    OR s.codeStation = DEREF(l.stationArrivee).codeStation
 GROUP BY 
     s.codeStation,
     s.nom_station
