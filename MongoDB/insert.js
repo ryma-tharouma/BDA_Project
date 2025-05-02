@@ -113,3 +113,41 @@ for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
 db.stations.insertMany(stations);
 db.lignes.insertMany(lignes);
 db.voyages.insertMany(voyages);
+
+
+// insert these voyages into the collection, allowing MongoDB to auto-generate _id
+const voyagesToInsert = [
+  {
+      date: new Date("2025-01-01"),
+      nb_voyageurs: 12000, // Plus que le seuil de 10 000
+      navette: {
+          marque: "Alstom",
+          annee: 2022,
+          moyen_transport: { type: "Métro", code: "MET" },
+          ligne_id: "M001"
+      }
+  },
+  {
+      date: new Date("2025-01-02"),
+      nb_voyageurs: 13000, // Plus que le seuil de 10 000
+      navette: {
+          marque: "Alstom",
+          annee: 2022,
+          moyen_transport: { type: "Métro", code: "MET" },
+          ligne_id: "M001"
+      }
+  },
+  {
+      date: new Date("2025-01-03"),
+      nb_voyageurs: 15000, // Plus que le seuil de 10 000
+      navette: {
+          marque: "Alstom",
+          annee: 2022,
+          moyen_transport: { type: "Métro", code: "MET" },
+          ligne_id: "M001"
+      }
+  }
+];
+
+// Insert these voyages into the collection, allowing MongoDB to auto-generate _id
+db.voyages.insertMany(voyagesToInsert);
