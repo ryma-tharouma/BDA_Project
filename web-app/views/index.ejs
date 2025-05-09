@@ -3,89 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MongoDB Queries</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>BDA Project Queries</title>
     <style>
         body {
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
-        .query-form {
+            font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
             background-color: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .query-option {
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
+        h1 {
+            color: #333;
+            text-align: center;
         }
-        .query-option:hover {
-            background-color: #f8f9fa;
+        .query-form {
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, button {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .database-select {
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="query-form">
-            <h1 class="text-center mb-4">MongoDB Queries</h1>
-            <form action="/query" method="POST">
-                <div class="mb-3">
-                    <label class="form-label">Select a Query:</label>
-                    <div class="query-options">
-                        <div class="query-option">
-                            <input type="radio" name="queryType" value="1" id="query1" class="form-check-input">
-                            <label for="query1" class="form-check-label">
-                                View all voyages from January 1st, 2025
-                            </label>
-                        </div>
-                        <div class="query-option">
-                            <input type="radio" name="queryType" value="2" id="query2" class="form-check-input">
-                            <label for="query2" class="form-check-label">
-                                Show voyages without problems (RAS)
-                            </label>
-                        </div>
-                        <div class="query-option">
-                            <input type="radio" name="queryType" value="3" id="query3" class="form-check-input">
-                            <label for="query3" class="form-check-label">
-                                Show total number of voyages per line
-                            </label>
-                        </div>
-                        <div class="query-option">
-                            <input type="radio" name="queryType" value="4" id="query4" class="form-check-input">
-                            <label for="query4" class="form-check-label">
-                                Increase number of passengers for metro services before January 15th, 2025
-                            </label>
-                        </div>
-                        <div class="query-option">
-                            <input type="radio" name="queryType" value="5" id="query5" class="form-check-input">
-                            <label for="query5" class="form-check-label">
-                                Show total voyages per line using Map-Reduce
-                            </label>
-                        </div>
-                        <div class="query-option">
-                            <input type="radio" name="queryType" value="6" id="query6" class="form-check-input">
-                            <label for="query6" class="form-check-label">
-                                Show navette with maximum number of voyages
-                            </label>
-                        </div>
-                        <div class="query-option">
-                            <input type="radio" name="queryType" value="7" id="query7" class="form-check-input">
-                            <label for="query7" class="form-check-label">
-                                Show transport means with daily passengers exceeding 1000
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="text-center">
-                    <button type="submit" class="btn btn-primary">Execute Query</button>
-                </div>
-            </form>
-        </div>
+        <h1>BDA Project Queries</h1>
+        
+        <form action="/query" method="POST" class="query-form">
+            <div class="form-group database-select">
+                <label for="dbType">Select Database:</label>
+                <select name="dbType" id="dbType" required onchange="updateQueryOptions()">
+                    <option value="mongodb">MongoDB</option>
+                    <option value="oracle">Oracle</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="queryType">Select Query:</label>
+                <select name="queryType" id="queryType" required>
+                    <!-- MongoDB Queries -->
+                    <optgroup label="MongoDB Queries" id="mongodb-queries">
+                        <option value="1">Query 1: Show all trips on 2025-01-01</option>
+                        <option value="2">Query 2: Get all trips without problems</option>
+                        <option value="3">Query 3: Get total trips per line</option>
+                        <option value="4">Query 4: Increase passengers by 100 for metro trips before 2025-01-15</option>
+                        <option value="5">Query 5: Map-Reduce equivalent for line trips</option>
+                        <option value="6">Query 6: Show navette with maximum trips</option>
+                        <option value="7">Query 7: Show transport means with daily passengers above threshold</option>
+                    </optgroup>
+                    <!-- Oracle Queries -->
+                    <optgroup label="Oracle Queries" id="oracle-queries" style="display: none;">
+                        <option value="1">Query 10: List all trips with problems</option>
+                        <option value="2">Query 11: List lines with main stations</option>
+                        <option value="3">Query 12: Navettes with maximum trips in January 2025</option>
+                        <option value="4">Query 13: Stations with at least 2 transport means</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <button type="submit">Execute Query</button>
+        </form>
     </div>
+
+    <script>
+        function updateQueryOptions() {
+            const dbType = document.getElementById('dbType').value;
+            const mongodbQueries = document.getElementById('mongodb-queries');
+            const oracleQueries = document.getElementById('oracle-queries');
+            
+            if (dbType === 'mongodb') {
+                mongodbQueries.style.display = '';
+                oracleQueries.style.display = 'none';
+                document.querySelector('#mongodb-queries option').selected = true;
+            } else {
+                mongodbQueries.style.display = 'none';
+                oracleQueries.style.display = '';
+                document.querySelector('#oracle-queries option').selected = true;
+            }
+        }
+
+        // Initialize query options on page load
+        document.addEventListener('DOMContentLoaded', updateQueryOptions);
+    </script>
 </body>
 </html> 
