@@ -1,0 +1,14 @@
+{
+  "name": "mongodb-queries-web",
+  "version": "1.0.0",
+  "description": "Web interface for MongoDB queries",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongodb": "^6.3.0",
+    "ejs": "^3.1.9"
+  }
+} 
