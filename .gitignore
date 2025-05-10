@@ -39,4 +39,9 @@ mongodb-data/
 * text=auto
 *.js text eol=lf
 *.json text eol=lf
-*.ejs text eol=lf 
+*.ejs text eol=lf
+
+# Ignore specific files
+SQL3.sql
+structure.json
+conception.mdj

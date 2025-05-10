@@ -1,0 +1,39 @@
+-- -- Drop user and associated tablespaces
+-- DROP USER SQL3 CASCADE;
+-- DROP TABLESPACE SQL3_TBS INCLUDING CONTENTS AND DATAFILES;
+-- DROP TABLESPACE SQL3_TempTBS INCLUDING CONTENTS AND DATAFILES;
+
+-- Drop tables (in reverse order of dependencies)
+-- DROP TABLE Voyage;
+-- DROP TABLE Navette;
+-- DROP TABLE Troncon;
+-- DROP TABLE Ligne;
+-- DROP TABLE Station;
+-- DROP TABLE MoyenTransport;
+
+-- Drop all types and their dependencies in reverse order of creation
+-- BEGIN
+--     FOR type_name IN (
+--         SELECT 'tVoyage' AS type_name FROM dual UNION ALL
+--         SELECT 'tNavette' FROM dual UNION ALL
+--         SELECT 'tTroncon' FROM dual UNION ALL
+--         SELECT 'tLigne' FROM dual UNION ALL
+--         SELECT 'tStation' FROM dual UNION ALL
+--         SELECT 'tMoyenTransport' FROM dual UNION ALL
+--         SELECT 't_set_ref_troncon' FROM dual UNION ALL
+--         SELECT 't_set_ref_navette' FROM dual UNION ALL
+--         SELECT 't_set_ref_voyage' FROM dual UNION ALL
+--         SELECT 't_set_ref_lignes' FROM dual
+--     ) LOOP
+--         BEGIN
+--             EXECUTE IMMEDIATE 'DROP TYPE ' || type_name.type_name || ' FORCE';
+--         EXCEPTION
+--             WHEN OTHERS THEN
+--                 IF SQLCODE != -4043 THEN
+--                     RAISE;
+--                 END IF;
+--         END;
+--     END LOOP;
+-- END;
+-- /
+
